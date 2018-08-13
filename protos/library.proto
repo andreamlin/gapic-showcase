@@ -1,0 +1,508 @@
+// Copyright 2018 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+import "google/api/annotations.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+
+package google.showcase.v1alpha2;
+
+option (google.api.metadata) = {
+  product_uri: "https://github.com/googleapis/gapic-showcase"
+};
+
+// A service to showcase Generated API Client features and common API patterns
+// used by Google.
+service Library {
+  // This service is meant to run locally on the port 7469
+  // (keypad digits for "show").
+  option (google.api.default_host) = "localhost:7469";
+
+  // List all shelves currently in the library.
+  rpc ListShelves(ListShelvesRequest) returns (ListShelvesResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha2/shelves"
+    };
+  }
+
+  // Create a new shelf.
+  rpc CreateShelf(CreateShelfRequest) returns (CreateShelfResponse) {
+    option (google.api.http) = {
+      post: "/v1alpha2"
+      body: "shelf"
+    };
+  }
+
+  // Get an existing shelf.
+  rpc GetShelf(GetShelfRequest) returns (GetShelfResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{name=shelves/*}"
+    };
+  }
+
+  // Delete an existing shelf.
+  // The shelf must be empty in order to be deleted; attempting to
+  // delete a shelf with books still on it will return INVALID_ARGUMENT.
+  rpc DeleteShelf(DeleteShelfRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1alpha2/{name=shelves/*}"
+    };
+  }
+
+  // Merge the specified shelf into this one.
+  //
+  // This method will error with ALREADY_EXISTS if the merge operation
+  // would otherwise create a duplicate book.
+  rpc MergeShelf(MergeShelfRequest) returns (Shelf) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{name=shelves/*}:merge"
+    };
+  }
+
+  // List books found on a given shelf.
+  rpc ListBooks(ListBooksRequest) returns (ListBooksResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{parent=shelves/*}/books"
+    };
+  }
+
+  // Create a new book.
+  rpc CreateBook(CreateBookRequest) returns (CreateBookReqponse) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{parent=shelves/*}/books"
+      body: "book"
+    };
+  }
+
+  // Get a specific book by name.
+  rpc GetBook(GetBookRequest) returns (GetBookResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{name=shelves/*/books/*}"
+      additional_bindings: {
+        get: "/v1alpha2/{name=unsorted/books/*}"
+      }
+    };
+  }
+
+  // Update a book.
+  rpc UpdateBook(UpdateBookRequest) returns (UpdateBookResponse) {
+    option (google.api.http) = {
+      patch: "/v1alpha2/{book.name=shelves/*/books/*}"
+      body: "book"
+    };
+  }
+
+  // Delete a book.
+  rpc DeleteBook(DeleteBookRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1alpha2/{name=shelves/*/books/*}"
+    };
+  }
+
+  // Move a book to a new shelf.
+  rpc MoveBook(MoveBookRequest) returns (MoveBookResponse) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{name=shelves/*/books/*}:move"
+    };
+  }
+
+  // Read a book.
+  //
+  // Reality: This will return the book's title, followed by a few
+  // paragraphs of pseudo-random lorem ipsum. The random contents are
+  // determined at creation, so reading the same book over and over will
+  // return the sSearchBooksame contents.
+  //
+  // Purpose: Demonstrate unary-stream.
+  rpc ReadBook(ReadBookRequest) returns (stream ReadBookResponse) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{name=shelves/*/books/*}:read"
+    };
+  }
+
+  // Annotate (mark up) a book.
+  // The first request must contain the book being annotated; all subsequent
+  // requests must contain annotations.
+  //
+  // Reality: This will return the book's contents (see `ReadBook`, but sans
+  // the title), and accept or reject annotations on those books. In addition
+  // to content, every annotation will be sent back as a response with
+  // a state (accepted or rejected, decided randomly), to allow the client
+  // to follow the annotations on its side.
+  //
+  // The stream will fail with INVALID_ARGUMENT if it receives an annotation
+  // that is not valid.
+  //
+  // The client may close the stream at any time. The server will close the
+  // stream if it goes three seconds without receiving a new request.
+  //
+  // Purpose: Demonstrate stream-stream.
+  rpc AnnotateBook(stream AnnotateBookRequest) returns (stream AnnotateBookResponse);
+
+  // Search for a book across all shelves, synchronously.
+  //
+  // Reality: This rpc has a 25% chance of returning the appropriate book
+  // immediately (or failing with NOT_FOUND if it does not exist), and a 75%
+  // chance of timeout-based failure (see `expire_time`/`ttl` for details).
+  //
+  // Purpose: Demonstrate timeouts.
+  rpc LookupBook(LookupBookRequest) returns (Book) {
+    option (google.api.http) = {
+      post: "/v1alpha2/books:lookup"
+    };
+  }
+
+  // Search for a book across all shelves, asychronously.
+  //
+  // Reality: The Operation resulting from this RPC will return the
+  // appropriate book (or fail with NOT_FOUND if it does not exist) in
+  // 0 <= x < 10 seconds, randomly decided.
+  //
+  // Purpose: Demonstrate LRO.
+  rpc AsyncLookupBook(AsyncLookupBookRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1alpha2/books:asyncLookup"
+    };
+    option (google.longrunning.operation_types) = {
+      response: "google.showcase.v1alpha2.Book"
+    };
+  }
+}
+
+// Request message for CreateShelf.
+message CreateShelfRequest {
+  // The shelf to create.
+  Shelf shelf = 1;
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Request message for LibraryService.GetShelf.
+message GetShelfRequest {
+  // The name of the shelf to retrieve.
+  string name = 1 [(google.api.resource_type) = "Shelf"];
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Request message for LibraryService.ListShelves.
+message ListShelvesRequest {
+  // Requested page size. Server may return fewer shelves than requested.
+  // If unspecified, server will pick an appropriate default.
+  int32 page_size = 1;
+
+  // A token identifying a page of results the server should return.
+  // Typically, this is the value of
+  // [ListShelvesResponse.next_page_token][google.example.library.v1.ListShelvesResponse.next_page_token]
+  // returned from the previous call to `ListShelves` method.
+  string page_token = 2;
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Response message for LibraryService.ListShelves.
+message ListShelvesResponse {
+  // The list of shelves.
+  repeated Shelf shelves = 1;
+
+  // A token to retrieve next page of results.
+  // Pass this value in the
+  // [ListShelvesRequest.page_token][google.showcase.v1alpha2.ListShelvesRequest.page_token]
+  // field in the subsequent call to `ListShelves` method to retrieve the next
+  // page of results.
+  string next_page_token = 2;
+}
+
+// Request message for LibraryService.DeleteShelf.
+message DeleteShelfRequest {
+  // The name of the shelf to delete.
+  string name = 1 [(google.api.resource_type) = "Shelf"];
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// A request to merge two shelves together.
+// Only the shelf specified in `name` survives; the other has its books
+// removed and is deleted.
+message MergeShelfRequest {
+  // The name of the shelf we're adding books to.
+  string name = 1 [(google.api.resource_type) = "Shelf"];
+
+  // The name of the shelf we're removing books from and deleting.
+  string source_shelf = 2 [(google.api.resource_type) = "Shelf"];
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Request message for LibraryService.CreateBook.
+message CreateBookRequest {
+  // The name of the shelf in which the book is created.
+  string parent = 1 [(google.api.resource_type) = "Shelf"];
+
+  // The book to create.
+  Book book = 2;
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Request message for LibraryService.GetBook.
+message GetBookRequest {
+  // The name of the book to retrieve.
+  string name = 1 [(google.api.resource_type) = "Book"];
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Request message for LibraryService.ListBooks.
+message ListBooksRequest {
+  // The name of the shelf whose books we'd like to list.
+  string parent = 1 [(google.api.resource_type) = "Shelf"];
+
+  // Requested page size. Server may return fewer books than requested.
+  // If unspecified, server will pick an appropriate default.
+  int32 page_size = 2;
+
+  // A token identifying a page of results the server should return.
+  // Typically, this is the value of
+  // [ListBooksResponse.next_page_token][google.showcase.v1alpha2.ListBooksResponse.next_page_token].
+  // returned from the previous call to `ListBooks` method.  //
+  string page_token = 3;
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Response message for LibraryService.ListBooks.
+message ListBooksResponse {
+  // The list of books.
+  repeated Book books = 1;
+
+  // A token to retrieve next page of results.
+  // Pass this value in the
+  // [ListBooksRequest.page_token][google.example.library.v1.ListBooksRequest.page_token]
+  // field in the subsequent call to `ListBooks` method to retriev  // e the next
+  // page of results.
+  string next_page_token = 2;
+}
+
+// Request message for LibraryService.UpdateBook.
+message UpdateBookRequest {
+  // Required. The updated book.
+  Book book = 1;
+
+  // The field mask. If no field mask is specified, it is assumed to be "*".
+  google.protobuf.FieldMask field_mask = 2;
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Request message for LibraryService.DeleteBook.
+message DeleteBookRequest {
+  // The name of the book to delete.
+  string name = 1 [(google.api.resource_type) = "Book"];
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Describes what book to move (name) and what shelf we're moving it
+// to (other_shelf_name).
+message MoveBookRequest {
+  // The name of the book to move.
+  string name = 1 [(google.api.resource_type) = "Book"];
+
+  // The name of the destination shelf.
+  string shelf = 2 [(google.api.resource_type) = "Shelf"];
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Request to read a book.
+message ReadBookRequest {
+  // The name of the book to read.
+  string name = 1 [(google.api.resource_type) = "Book"];
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Response for reading a book.
+// This response is streamed; each individual response contains
+// some of the content.
+message ReadBookResponse {
+  oneof data {
+    // The title of the book.
+    string title = 1;
+
+    // Content from the book.
+    string content = 2;
+  }
+}
+
+// Request to annotate a book.
+//
+// The first request is expected to contain the book to annotate.
+// All subsequent requests are expected to contain an annotation.
+// If these conditions are not met, the stream exits with INVALID_ARGUMENT.
+message AnnotateBookRequest {
+  oneof payload {
+    // The name of the book to be annotated.
+    string name = 1 [(google.api.resource_type) = "Book"];
+
+    // An annotation (copy-edit) to be made to the book.
+    // If any annotation can not be processed, then the stream exists
+    // with INVALID_ARGUMENT; previous annotations are applied.
+    Annotation annotation = 2;
+  }
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Response within the annotation RPC.
+// This sends down the contents of the book to provide the baseline
+// content off which to annotate.
+message AnnotateBookResponse {
+  oneof payload {
+    // Content from the book.
+    string content = 1;
+
+    // A previous annotation, which may or may not have been accepted.
+    // Annotations sent in responses have their `state` field populated.
+    Annotation annotation = 2;
+  }
+}
+
+// Request for looking up a book.
+//
+// (-- go/not-api-precedent:
+//     Generally, "lookup" is not a verb we use, and searches have queries,
+//     not IDs. This is provided as-is to demonstrate particular behavior.
+//  --)
+message LookupBookRequest {
+  // The ID of the book. This is the end of the book's resource name.
+  // Given a book with the resource name: `shelves/foo/books/bar`, this value
+  // would be "bar".
+  string book_id = 1;
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// Request for looking up a book asychronously.
+//
+// (-- go/not-api-precedent:
+//     Generally, "lookup" is not a verb we use, and searches have queries,
+//     not IDs. This is provided as-is to demonstrate particular behavior.
+//  --)
+message AsyncLookupBookRequest {
+  // The ID of the book. This is the end of the book's resource name.
+  // Given a book with the resource name: `shelves/foo/books/bar`, this value
+  // would be "bar".
+  string book_id = 1;
+
+  // Input only. The test being run, if applicable.
+  string test = 99 [(google.api.resource_type) = "Test"];
+}
+
+// A Shelf contains a collection of books with a theme.
+message Shelf {
+  // The resource name of the shelf.
+  // Shelf names have the form `shelves/{shelf_id}`.
+  // The name is ignored when creating a shelf.
+  string name = 1 [(google.api.resource).path = "shelves/*"];
+
+  // The theme of the shelf
+  string theme = 2;
+}
+
+// A single book in the library.
+message Book {
+  // The resource name of the book.
+  // Book names have the form `shelves/{shelf_id}/books/{book_id}`.
+  // The name is ignored when creating a book.
+  string name = 1
+    [(google.api.resource).path = "shelves/*/books/*"];
+
+  // The name of the book author.
+  string author = 2;
+
+  // The title of the book.
+  string title = 3;
+}
+
+// A single annotation, or suggested alteration to be made to the content
+// of a book.
+message Annotation {
+  // The action being recommended by the editor.
+  enum Action {
+    ACTION_UNSPECIFIED = 0;
+
+    // A request to insert text.
+    INSERT = 1;
+
+    // A request to delete text.
+    DELETE = 2;
+
+    // A request to replace text.
+    REPLACE = 3;
+  }
+
+  // Required. The action to be taken.
+  Action action = 1;
+
+  // Required. The text being acted upon.
+  // If this text can not be found, raises INVALID_ARGUMENT.
+  string anchor = 2;
+
+  // If the anchor is known to appear more than once, the offset from
+  // the beginning of the content.
+  // Using longer anchors is recommended over using this.
+  int32 offset = 3;
+
+  // The new text being added to the content, for INSERT and
+  // REPLACE actions.
+  // If this is provided on a DELETE action, it is ignored.
+  string text = 4;
+
+  // The state of this annotation.
+  enum State {
+    STATE_UNSPECIFIED = 0;
+
+    // This annotation was accepted, and the content was modified
+    // accordingly.
+    ACCEPTED = 1;
+
+    // This annotation was rejected, and the content was not modified.
+    REJECTED = 2;
+  }
+
+  // Output only. Whether or not this annotation was accepted and the
+  // corresponding edit made.
+  State state = 5;
+}
