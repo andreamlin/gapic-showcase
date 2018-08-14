@@ -189,18 +189,12 @@ service Library {
 message CreateShelfRequest {
   // The shelf to create.
   Shelf shelf = 1;
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Request message for LibraryService.GetShelf.
 message GetShelfRequest {
   // The name of the shelf to retrieve.
   string name = 1 [(google.api.resource_type) = "Shelf"];
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Request message for LibraryService.ListShelves.
@@ -214,9 +208,6 @@ message ListShelvesRequest {
   // [ListShelvesResponse.next_page_token][google.example.library.v1.ListShelvesResponse.next_page_token]
   // returned from the previous call to `ListShelves` method.
   string page_token = 2;
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Response message for LibraryService.ListShelves.
@@ -236,9 +227,6 @@ message ListShelvesResponse {
 message DeleteShelfRequest {
   // The name of the shelf to delete.
   string name = 1 [(google.api.resource_type) = "Shelf"];
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // A request to merge two shelves together.
@@ -250,9 +238,6 @@ message MergeShelfRequest {
 
   // The name of the shelf we're removing books from and deleting.
   string source_shelf = 2 [(google.api.resource_type) = "Shelf"];
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Request message for LibraryService.CreateBook.
@@ -262,18 +247,12 @@ message CreateBookRequest {
 
   // The book to create.
   Book book = 2;
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Request message for LibraryService.GetBook.
 message GetBookRequest {
   // The name of the book to retrieve.
   string name = 1 [(google.api.resource_type) = "Book"];
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Request message for LibraryService.ListBooks.
@@ -290,9 +269,6 @@ message ListBooksRequest {
   // [ListBooksResponse.next_page_token][google.showcase.v1alpha2.ListBooksResponse.next_page_token].
   // returned from the previous call to `ListBooks` method.  //
   string page_token = 3;
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Response message for LibraryService.ListBooks.
@@ -315,18 +291,12 @@ message UpdateBookRequest {
 
   // The field mask. If no field mask is specified, it is assumed to be "*".
   google.protobuf.FieldMask field_mask = 2;
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Request message for LibraryService.DeleteBook.
 message DeleteBookRequest {
   // The name of the book to delete.
   string name = 1 [(google.api.resource_type) = "Book"];
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Describes what book to move (name) and what shelf we're moving it
@@ -337,18 +307,12 @@ message MoveBookRequest {
 
   // The name of the destination shelf.
   string shelf = 2 [(google.api.resource_type) = "Shelf"];
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Request to read a book.
 message ReadBookRequest {
   // The name of the book to read.
   string name = 1 [(google.api.resource_type) = "Book"];
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Response for reading a book.
@@ -379,9 +343,6 @@ message AnnotateBookRequest {
     // with INVALID_ARGUMENT; previous annotations are applied.
     Annotation annotation = 2;
   }
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Response within the annotation RPC.
@@ -409,9 +370,6 @@ message LookupBookRequest {
   // Given a book with the resource name: `shelves/foo/books/bar`, this value
   // would be "bar".
   string book_id = 1;
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // Request for looking up a book asychronously.
@@ -425,9 +383,6 @@ message AsyncLookupBookRequest {
   // Given a book with the resource name: `shelves/foo/books/bar`, this value
   // would be "bar".
   string book_id = 1;
-
-  // Input only. The test being run, if applicable.
-  string test = 99 [(google.api.resource_type) = "Test"];
 }
 
 // A Shelf contains a collection of books with a theme.
